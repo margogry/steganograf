@@ -1,8 +1,20 @@
-from cv2 import dct, idct
+from cv2 import dct, idct, imread, PSNR
 from PIL import Image
 import numpy as np
 from math import sqrt, pi, cos
 FILENAME = "input.bmp"
+comp = 0
+
+def fooPSNR():
+    original = imread("input.bmp")
+    contrast = imread("output.bmp", 1)
+    mse = np.mean((original - contrast) ** 2)
+    if (mse == 0):
+        return 100
+    rmse = sqrt(mse)
+    print('RMSE', rmse)
+    psnrcv = PSNR(original, contrast)
+    print('psnr = ', psnrcv)
 
 def change(curBit, num):
     if num + 1 == 256:
@@ -20,17 +32,13 @@ def hideWrd(wrd):
     #print(width, height)
     imageOutput = Image.open(FILENAME)
     objOut = imageOutput.load()
-    pix = np.array(image.getdata(2))
+    pix = np.array(image.getdata(comp))
     pix = pix.reshape(height, width)
     wrdLen = 0
     for ih in range(int(width / 8)):
         if wrdLen < len(wrd):
             for jw in range(int(height / 8)):
-                mas = np.array(pix[8 * ih:8 * (ih + 1), 8 * jw:8 * (jw + 1)])
-                #print(pix[8 * jw:8 * (jw + 1), 8 * ih:8 * (ih + 1)])
-                #for i in range(8 * jw, 8 * (jw + 1)):
-                #    for j in range(8 * ih, 8 * (ih + 1)):
-                #        print(i, ' ', j)
+                mas = np.array(pix[ 8 * jw:8 * (jw + 1), 8 * ih:8 * (ih + 1)])
                 mas = mas.astype('float32')
                 masDCT = dct(mas)
                 masDCT = np.around(masDCT)
@@ -40,20 +48,18 @@ def hideWrd(wrd):
                             masDCT[i][j] = change(wrd[wrdLen], masDCT[i][j])
                         wrdLen += 1
 
-                    masIDCT = np.around(idct(masDCT))
-                    #print(len(masIDCT[7]))
+                masIDCT = np.around(idct(masDCT))
 
-                    for i in range(8):
-                        for j in range(8):
-                            newBlk = list(obj[ih*8 + i, jw*8 + j])
-                            newBlk[2] = masIDCT[i][j]
-                            objOut[ih*8 + i, jw*8 + j] = tuple(newBlk)
-                            #print("i = ", ih*8 + i, "  j = ",  jw*8 + j, "  i*8+j = ", i*8+j)
+                for i in range(8):
+                    for j in range(8):
+                        newBlk = list(obj[ih*8 + i, jw*8 + j])
+                        newBlk[comp] = masIDCT[i][j]
+                        objOut[ih*8 + i, jw*8 + j] = tuple(newBlk)
                 if wrdLen >= len(wrd):
                     break
         else:
-            imageOutput.save("output.bmp", "BMP")
             break
+    imageOutput.save("output.bmp", "BMP")
 
 
 def findWrd(wrd, binWrd):
@@ -61,18 +67,13 @@ def findWrd(wrd, binWrd):
     imageOutput = Image.open("output.bmp")
     width = imageOutput.size[0]  # Определяем ширину.
     height = imageOutput.size[1]  # Определяем высоту.
-    pix = np.array(imageOutput.getdata(1))
+    pix = np.array(imageOutput.getdata(comp))
     pix = pix.reshape(height, width)
     binWrdLen = 0
     for ih in range(int(width / 8)):
         if (binWrdLen < len(binWrd)):
             for jw in range(int(height / 8)):
                 mas = np.array(pix[8 * ih:8 * (ih + 1), 8 * jw:8 * (jw + 1)])
-                #print(pix[8 * jw:8 * (jw + 1), 8 * ih:8 * (ih + 1)])
-                #for i in range(8 * jw, 8 * (jw + 1)):
-                #    for j in range( 8 * ih, 8 * (ih + 1)):
-                #        print(i, ' ', j)
-
                 mas = mas.astype('float32')
                 masDCT = dct(mas)
                 masDCT = np.around(masDCT)
@@ -81,7 +82,6 @@ def findWrd(wrd, binWrd):
                         for j in range(8):
                             if (binWrdLen < len(binWrd)):
                                 binMsg.append(int(masDCT[i][j] % 2))
-                                #print("i = ", ih * 8 + i, "  j = ", jw * 8 + j, "  i*8+j = ", i * 8 + j)
                             binWrdLen += 1
                 else:
                     break
@@ -101,7 +101,8 @@ def findWrd(wrd, binWrd):
     for l in range(len(binWrd)):
         if binWrd[l] != check[l]:
             mistake += 1
-    print('При передаче %d бит искажено' % mistake, "из", len(binWrd))
+    mistake /= 2
+    print('При передаче %d бит искажено' % mistake)
     print('Это %f процентов' % (100. * (float(mistake) / len(binWrd))))
 
 def initData():
@@ -116,3 +117,4 @@ def initData():
     findWrd(inWrd, wrdInBin)
 
 initData()
+fooPSNR()
