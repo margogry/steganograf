@@ -1,8 +1,8 @@
 import random
-import uuid
+import string
 
 def buildblock(size):
-    return uuid.uuid4().hex[:size].upper()
+    return ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase) for _ in range(size))
 
 def сhange(s, origneSymb, changeSymb):
     with open("input.txt", "w"):
@@ -14,9 +14,13 @@ def сhange(s, origneSymb, changeSymb):
     while i < len(s):
         fIn.write(buildblock(random.randint(1, 10)))
         if s[i] == '1':
-            fIn.write(changeSymb)
+            fIn.write(changeSymb) # 1 - tab
+            #fOut.write("-1 ")
+            #print("1")
         else:
-            fIn.write(origneSymb)
+            fIn.write(origneSymb) # 0 - space
+            #fOut.write("-0 ")
+            #print("0")
         i += 1
 
     fIn.close()
