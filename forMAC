@@ -1,0 +1,62 @@
+import random
+import uuid
+
+def buildblock(size):
+    return uuid.uuid4().hex[:size].upper()
+
+def сhange(s, origneSymb, changeSymb):
+    with open("input.txt", "w"):
+        pass
+
+    fIn = open("input.txt", "a")
+    i = 0
+
+    while i < len(s):
+        fIn.write(buildblock(random.randint(1, 10)))
+        if s[i] == '1':
+            fIn.write(changeSymb)
+        else:
+            fIn.write(origneSymb)
+        i += 1
+
+    fIn.close()
+
+def findWord(origneSymb, changeSymb):
+    fOut = open("input.txt", "r")
+    i = 0
+    k = 0
+    massBit = []
+    simbol = fOut.read(1);
+
+    while simbol:
+        if simbol == origneSymb:
+            massBit.append(0)
+            i += 1
+            k += 1
+        elif simbol == changeSymb:
+            massBit.append(1)
+            k += 1
+        simbol = fOut.read(1)
+
+    answer = ''
+    for i in range(len(massBit)//8):
+        binStr = ''.join(str(x) for x in (massBit[(i * 8):(i + 1) * 8]))
+        if binStr == '10011000':
+            answer += ' '
+        else:
+            answer += str(bytes([int(binStr, base=2)]), 'cp1251')
+    print("Получено - ", answer)
+
+    fOut.close()
+
+
+inWrd = str(input("Введите слово - "))
+wrdInBin = ''
+for code in inWrd.encode('cp1251'):
+    binCode = bin(code)[2:]
+    while len(binCode) < 8:
+        binCode = '0' + binCode
+    wrdInBin += binCode
+print(wrdInBin)
+сhange(wrdInBin, chr(32), chr(9))
+findWord(chr(32), chr(9))
